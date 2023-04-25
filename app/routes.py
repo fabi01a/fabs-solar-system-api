@@ -1,4 +1,4 @@
-from flask import Blueprint, jsonify
+from flask import Blueprint, jsonify, abort, make_response
 
 #create Planet Class
 class Planet:
@@ -8,6 +8,15 @@ class Planet:
         self.description = description
         self.temp = temp
 
+#what is the purpose of this function
+    def make_planet_dict(self):
+        return dict(
+            id = self.id,
+            name = self.name,
+            description = self.description,
+            temp = self.temp
+        )
+    
 #create list of Planet instances:
 planets = [
     Planet(5,"Jupiter","fifth planet from the Sun","-166F"), 
@@ -16,23 +25,35 @@ planets = [
     Planet(8,"Neptune","eigth planet from the Sun","-373F"),
     Planet(9,"Pluto","ninth planet from the Sun","-387F")
 ]
-#create endpoint - READ: receive a list of planets with details
+
 planets_bp = Blueprint("planets", __name__, url_prefix="/planets")
 
-@planets_bp.route("/<planet_id>", methods=["GET"])
-def handle_planets(planet_id):
+#Wave 1
+#create endpoint - READ: receive a list of planets with details
+@planets_bp.route("", methods=["GET"])
+def handle_planets():
+    planet_list = [] 
+    for planet in planets:
+        planet_list.append(planet.make_planet_dict())
+    return jsonify(planet_list)
+
+# Handle Error responses: 404 response Not Found and any invalid ids get a 400 response Invalid ID
+def validate_planets(planet_id):
     try:
         planet_id = int(planet_id)
     except:
-        return {"message":f"planet {planet_id} invalid"},400
-
+        abort(make_response({"message":f"planet {planet_id} invalid"},400))
+    
     for planet in planets:
         if planet.id == planet_id:
-            return {
-                "id": planet.id,
-                "name": planet.name,
-                "description": planet.description,
-                "temp": planet.temp
-            }
+            return planet
     
-    return {"message": f"planet {planet_id} not found"},404
+    abort(make_response({"message": f"planet {planet_id} not found"},404))
+
+
+#WAVE 2
+#create endpoint: READ: receive one particular planet with info
+@planets_bp.route("<planet_id>", methods=["GET"])
+def handle_planet(planet_id):
+    planet = validate_planets(planet_id)
+    return planet.make_planet_dict()
