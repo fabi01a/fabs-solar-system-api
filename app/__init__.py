@@ -1,14 +1,22 @@
-#__init__ file is used to mark a folder as a package. 
-#it also defines the start-up logic for Flask server
 from flask import Flask
+from flask_sqlalchemy import SQLAlchemy
+from flask_migrate import Migrate
 
-#code below is the boilerplate code to start a Flask application
+db = SQLAlchemy()
+migrate = Migrate()
+
 def create_app(test_config=None):
     app = Flask(__name__)
-    
-    #registering the BP from routes file* everytime you make a new bp 
-    #you have to register
+
+    app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+    app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql+psycopg2://postgres:postgres@localhost:5432/solar_system_development'
+
+    db.init_app(app)
+    migrate.init_app(app, db)
+
     from .routes import planets_bp
-    app.register_blueprint(planets_bp) 
-    
-    return app 
+    app.register_blueprint(planets_bp)
+
+    from app.models.planet import Planet
+
+    return app
